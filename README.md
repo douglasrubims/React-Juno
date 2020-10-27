@@ -12,7 +12,7 @@ const checkout = new DirectCheckout("YOUR_PUBLIC_KEY", false); // true to produc
 
 const cardData = {
   cardNumber: '0000000000000000',
-  holderName: 'Nome do Titular do Cartão',
+  holderName: 'Name of card holder',
   securityCode: '000',
   expirationMonth: '12',
   expirationYear: '2045'
