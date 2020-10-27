@@ -7,25 +7,23 @@ export default class DirectCheckout {
 		this._publicKey = null;
 		this._countAwaitingPublicKey = 0;
 		this._publicToken = publicToken;
-		this._crypto = new Crypto();
-		this._card = new Card();
 		this._loadPublicKey();
 	}
 
 	getCardType(cardNumber) {
-		return (this.isValidCardNumber(cardNumber)) ? this._card.getType(cardNumber).name : false;
+		return (this.isValidCardNumber(cardNumber)) ? new Card().getType(cardNumber).name : false;
 	}
 
 	isValidCardNumber(cardNumber) {
-		return this._card.validateNumber(cardNumber);
+		return new Card().validateNumber(cardNumber);
 	}
 
 	isValidSecurityCode(cardNumber, securityCode) {
-		return this._card.validateCvc(cardNumber, securityCode);
+		return new Card().validateCvc(cardNumber, securityCode);
 	}
 
 	isValidExpireDate(expirationMonth, expirationYear) {
-		return this._card.validateExpireDate(expirationMonth, expirationYear);
+		return new Card().validateExpireDate(expirationMonth, expirationYear);
 	}
 
 	isValidCardData(cardData) {
@@ -57,35 +55,26 @@ export default class DirectCheckout {
 	}
 
 	async getCardHash(cardData) {
-		if(this._checkPublicKey() && this.isValidCardData(cardData)) {
-			return await this._internalGetCardHash(cardData);
-		}
+		if(this._checkPublicKey() && this.isValidCardData(cardData)) return await this._internalGetCardHash(cardData);
 	}
 
 	async _internalGetCardHash(cardData) {
-		const url = this._url + 'get-credit-card-hash.json';
-		const encoded = await this._crypto.encrypt(this._publicKey, JSON.stringify(cardData));
-		var params = 'publicToken=' + this._publicToken;
-		params += '&encryptedData=' + window.encodeURIComponent(encoded);
+		const url = `${ this._url }get-credit-card-hash.json`;
+		const encoded = await new Crypto().encrypt(this._publicKey, JSON.stringify(cardData));
+		const params = `publicToken=${ this._publicToken }&encryptedData=${ window.encodeURIComponent(encoded) }`;
 		var res = await this._ajax('POST', url, params);
 		res = JSON.parse(res);
-		if(res.success) {
-			return res.data;
-		} else {
-			throw Error(res.errorMessage);
-		}
+		if(res.success) return res.data;
+		else throw Error(res.errorMessage);
 	}
 
 	async _loadPublicKey() {
-		var url = this._url + 'get-public-encryption-key.json';
-		var params = 'publicToken=' + this._publicToken + '&version=' + this._version;
+		const url = `${ this._url }get-public-encryption-key.json`;
+		const params = `publicToken=${ this._publicToken }&version=${ this._version }`;
 		var res = await this._ajax('POST', url, params);
 		res = JSON.parse(res);
-		if(res.success) {
-			this._publicKey = res.data;
-		} else {
-			throw Error(res.errorMessage);
-		}
+		if(res.success) this._publicKey = res.data;
+		else throw Error(res.errorMessage);
 	}
 
 	_checkPublicKey() {
@@ -94,26 +83,16 @@ export default class DirectCheckout {
 				this._countAwaitingPublicKey++;
 				this._checkPublicKey();
 			}.bind(this), 100);
-		} else {
-			return true;
-		}
+		} else return true;
 	}
 
 	async _ajax(type, url, params) {
 		return new Promise(function (resolve, reject) {
-			var req = new XMLHttpRequest();
+			const req = new XMLHttpRequest();
 			req.open(type, url);
-			req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-			req.onload = function () {
-				if (req.status == 200) {
-					resolve(req.response);
-				} else {
-					reject(Error(req.statusText));
-				}
-			};
-			req.onerror = function () {
-				reject(Error("Network Error"));
-			};
+			req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			req.onload = () => { req.status == 200 ? resolve(req.response) : reject(Error(req.statusText)) };
+			req.onerror = () => { reject(Error('Network Error')) };
 			req.send(params);
 		});
 	}

@@ -99,13 +99,9 @@ export default class Card {
 		};
 	}
 
-	getType(value) {
-		var cardNo = value.replace(/ /g, '');
-		for(var key in this.getOrderedTypes()) {
-			if(this.validatorNumber(cardNo, this.type[ key ])) {
-				return this.type[ key ];
-			}
-		}
+	getType(cardNumber) {
+		cardNumber = cardNumber.replace(/ /g, '');
+		for(const key in this.getOrderedTypes()) if(this.validatorNumber(cardNumber, this.type[ key ])) return this.type[ key ];
 		return false;
 	}
 
@@ -113,25 +109,21 @@ export default class Card {
 		const types = {};
 		var order = 1;
 		while(order < 100) {
-			for(var key in this.type) {
-				if(this.type[ key ].order == order) {
-					types[ key ] = this.type[ key ];
-				}
-			}
+			for(const key in this.type) if(this.type[ key ].order == order) types[ key ] = this.type[ key ];
 			order++;
 		}
 		return types;
 	}
 
-	validateNumber(value) {
-		const cardNo = value.replace(/ /g, '');
-		const type = this.getType(cardNo);
-		return type && type.cardLength == cardNo.length && this.validatorLuhn(cardNo);
+	validateNumber(cardNumber) {
+		cardNumber = cardNumber.replace(/ /g, '');
+		const type = this.getType(cardNumber);
+		return type && type.cardLength == cardNumber.length && this.validatorLuhn(cardNumber);
 	}
 
-	validateCvc(cardNo, cvcNo) {
-		const type = this.getType(cardNo.replace(/ /g, ''));
-		return type && this.validatorCvc(cvcNo, type);
+	validateCvc(cardNumber, cvcNumber) {
+		const type = this.getType(cardNumber.replace(/ /g, ''));
+		return type && this.validatorCvc(cvcNumber, type);
 	}
 
 	validateExpireDate(expirationMonth, expirationYear) {
@@ -149,15 +141,15 @@ export default class Card {
 		return false;
 	}
 
-	validatorNumber(cardNo, type) {
-		return type.detector.test(cardNo);
+	validatorNumber(cardNumber, type) {
+		return type.detector.test(cardNumber);
 	}
 
-	validatorLuhn(cardNo) {
+	validatorLuhn(cardNumber) {
 		var numberProduct, checkSumTotal = 0;
-		for(var digitCounter = cardNo.length - 1; digitCounter >= 0; digitCounter = digitCounter - 2) {
-			checkSumTotal += parseInt(cardNo.charAt(digitCounter), 10);
-			numberProduct = String((cardNo.charAt(digitCounter - 1) * 2));
+		for(var digitCounter = cardNumber.length - 1; digitCounter >= 0; digitCounter = digitCounter - 2) {
+			checkSumTotal += parseInt(cardNumber.charAt(digitCounter), 10);
+			numberProduct = String((cardNumber.charAt(digitCounter - 1) * 2));
 			for(var productDigitCounter = 0; productDigitCounter < numberProduct.length; productDigitCounter++) {
 				checkSumTotal += parseInt(numberProduct.charAt(productDigitCounter), 10);
 			}
@@ -165,7 +157,7 @@ export default class Card {
 		return (checkSumTotal % 10 == 0);
 	}
 
-	validatorCvc(cvcNo, type) {
-		return type.cvcLength == ('' + cvcNo).length;
+	validatorCvc(cvcNumber, type) {
+		return type.cvcLength == ('' + cvcNumber).length;
 	}
 };
